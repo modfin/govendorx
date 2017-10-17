@@ -17,7 +17,7 @@ chmod +x /usr/local/bin/govendorx
 ## Motivation
 In example, when mounting/symlinking a kit repo in the vendors folder and not wanting to pull 
 all the external decencies of the repo. This enables you to only pull external decencies of 
-used sub packages of the kit repo. This is useful in a useful when developing in a docker context 
+used sub packages of the kit repo. This is useful when developing in a docker context 
 and kit development is done i parallel.
 
 ## Usage of extension to govendor

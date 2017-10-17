@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 
-
-
 function has_govendor() {
 
     govendor --version > /dev/null 2>&1
-
-    [ "$?" == "127" ] && echo false && exit 0
+    [ "$?" == "127" ] && echo false && exit 1
     echo true
 }
 
@@ -47,8 +44,6 @@ function in_use() {
     echo false
 }
 
-
-
 function get_required(){
 
     MISSING=$(govendor list -no-status +m,^u | grep -E "[^\./]*\.[^\./]*/") # grepping decencies that are domain based
@@ -63,7 +58,6 @@ function get_required(){
         fi
     done
 }
-
 
 
 if [ "$(has_govendor)" == "false" ]
