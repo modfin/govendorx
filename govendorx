@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+
+
+function has_govendor() {
+
+    govendor --version > /dev/null 2>&1
+
+    [ "$?" == "127" ] && echo false && exit 0
+    echo true
+}
+
+
+function in_use() {
+    list=$(govendor list -v $1 | tail -n +2 | tr -d '├──' | tr -d '└──' | tr -s ' ' | sed 's/^ *//;s/ *$//')
+
+    OIFS=$IFS
+    IFS='
+'
+    for dep in $list
+    do
+        IFS=' ' read -r -a array <<< "$dep"
+
+        unmet=$(echo ${array[0]} | grep u | wc -l)
+        if [ "$unmet" != "0" ]
+        then
+           continue
+        fi
+
+        hasLocal=$(echo ${array[0]} | grep 'l\|p' | wc -l)
+        if [ "$hasLocal" != "0" ]
+        then
+            echo true
+            exit 0
+        fi
+
+        r=$(in_use ${array[1]})
+        if [ "$r" = "true" ]
+        then
+            echo true
+            exit 0
+        fi
+    done
+
+    IFS=$OIFS
+
+    echo false
+}
+
+
+
+function get_required(){
+
+    MISSING=$(govendor list -no-status +m,^u | grep -E "[^\./]*\.[^\./]*/") # grepping decencies that are domain based
+    for m in $MISSING
+    do
+        toFetch=$(in_use $m)
+        if [ "$toFetch" == "true" ]
+        then
+            dep=$m
+            [ "$1" != "p" ] &&  dep="  r $dep"
+            echo "$dep"
+        fi
+    done
+}
+
+
+
+if [ "$(has_govendor)" == "false" ]
+then
+    echo "govendor does not exist "
+    echo "install it by go get -u github.com/kardianos/govendor"
+    exit 1
+fi
+
+args=$(echo "$@")
+if [ "$args" == "list +r" ] || [ "$args" == "list +required" ]; then
+    get_required
+    exit 0
+fi
+
+if [ "$args" == "fetch +r" ] || [ "$args" == "fetch +required" ]; then
+    deps=$(get_required p)
+
+    for dep in $deps
+    do
+        govendor fetch $dep
+    done
+
+    exit 0
+fi
+
+govendor "$@"
